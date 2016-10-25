@@ -18,7 +18,12 @@ function [ source ] = preparesource( source ,fignum)
 %You should have received a copy of the GNU General Public License
 %along with Radiation Pattern Calculator.  If not, see <http://www.gnu.org/licenses/>.
 
-scrsz = get(groot,'ScreenSize');
+isoctave = (exist ('OCTAVE_VERSION', 'builtin') > 0); %running in matlab or octave?
+if isoctave 
+  scrsz = get(0,'screensize');
+else
+  scrsz = get(groot,'ScreenSize');
+end
 
 source.nz=round(source.Lz/source.dx); %number of source points, z
 tempz=linspace(-source.Lz/2,source.Lz/2,source.nz);
@@ -60,7 +65,12 @@ source.z=zs_rot+source.zpos;
 
 %plot source points
 h=figure(fignum);
-set(h,'OuterPosition',[1 2*scrsz(4)/3 scrsz(3)/3 scrsz(4)/3.2]);
+
+if isoctave
+    set(h,'position',[1 2*scrsz(4)/3 scrsz(3)/3-30 scrsz(4)/3.2-90]);
+else
+    set(h,'OuterPosition',[1 2*scrsz(4)/3 scrsz(3)/3 scrsz(4)/3.2]);
+end
 plot3(source.x,source.y,source.z,'.')
 axis equal
 xlabel('X, m')

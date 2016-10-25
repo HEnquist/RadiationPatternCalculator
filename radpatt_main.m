@@ -17,14 +17,19 @@
 
 clear all
 close all
-scrsz = get(groot,'ScreenSize');
-%isoctave = (exist ('OCTAVE_VERSION', 'builtin') > 0); %running in matlab or octave?
+
+isoctave = (exist ('OCTAVE_VERSION', 'builtin') > 0); %running in matlab or octave?
+if isoctave 
+  scrsz = get(0,'screensize');
+else
+  scrsz = get(groot,'ScreenSize');
+end
 
 %% define the room
 room = struct;
 sweetspot = struct;
 
-room.dx = 50e-3; %pixelsize in meters
+room.dx = 20e-3; %pixelsize in meters
 room.lx = 5.1; %room length, m
 room.lz = 2.4; %room height, m
 room.ly = 3.2; %room width, m
@@ -67,10 +72,10 @@ source.conedepth=0;
 source.dir=[1;0;0];
 source.dipole = true;
 source.xpos = 1;
-source.ypos = 1;
+source.ypos = 0;
 source.zpos = 0;
 source.rotz = 0;
-source.stereo=true;
+source.stereo=false;
 
 %example: plane rectangular source 100x60mm with stereo enabled
 % source.Lz=100e-3;
@@ -175,7 +180,12 @@ close(h)
 
 logimage_v=20*log10(abs((world_v)));
 h=figure(20);
-set(h,'OuterPosition',[scrsz(3)/3 2*scrsz(4)/3 scrsz(3)/3 scrsz(4)/3.2]);
+if isoctave
+    set(h,'position',[scrsz(3)/3 2*scrsz(4)/3 scrsz(3)/3-30 scrsz(4)/3.2-90]);
+else
+    set(h,'OuterPosition',[scrsz(3)/3 2*scrsz(4)/3 scrsz(3)/3 scrsz(4)/3.2]);
+end
+
 imagesc(room.x,room.z,logimage_v,[0 140]);
 colormap(jet(256))
 colorbar
@@ -195,16 +205,29 @@ close(h)
 if source.stereo
     image_lr=makestereoimage(world_h,'ud',1);
     h=figure(31);
-    imshow(image_lr,'InitialMagnification','fit') %/max(image_lr(:))
+    if isoctave
+        imshow(image_lr);
+    else
+        imshow(image_lr,'InitialMagnification','fit')
+    end
     title(['Horizontal channel balance, ',num2str(source.f), ' Hz'])
-    set(h,'OuterPosition',[2*scrsz(3)/3 2*scrsz(4)/3 scrsz(3)/3 scrsz(4)/3.2]);
+    if isoctave
+        set(h,'position',[2*scrsz(3)/3 2*scrsz(4)/3 scrsz(3)/3-30 scrsz(4)/3.2-90]);
+    else
+        set(h,'OuterPosition',[2*scrsz(3)/3 2*scrsz(4)/3 scrsz(3)/3 scrsz(4)/3.2]);
+    end
     world_h=world_h + flipud(world_h);
 end
 
 
 logimage_h=20*log10(abs((world_h)));
 h=figure(30);
-set(h,'OuterPosition',[scrsz(3)/3 scrsz(4)/3+20 scrsz(3)/3 scrsz(4)/3.2]);
+
+if isoctave
+    set(h,'position',[scrsz(3)/3 scrsz(4)/3+20 scrsz(3)/3-30 scrsz(4)/3.2-90]);
+else
+    set(h,'OuterPosition',[scrsz(3)/3 scrsz(4)/3+20 scrsz(3)/3 scrsz(4)/3.2]);
+end
 imagesc(room.x,room.y,logimage_h,[0 140]);
 colormap(jet(256))
 colorbar
@@ -223,14 +246,28 @@ close(h)
 if source.stereo
     image_blr = makestereoimage(world_bak,'lr',1);
     h=figure(41);
-    imshow(image_blr,'InitialMagnification','fit') %/max(image_lr(:))
+    if isoctave
+        imshow(image_blr);
+    else
+        imshow(image_blr,'InitialMagnification','fit');
+    end
     title(['Back wall channel balance, ',num2str(source.f), ' Hz'])
-    set(h,'OuterPosition',[2*scrsz(3)/3 scrsz(4)/3+20 scrsz(3)/3 scrsz(4)/3.2]);
+    
+    if isoctave
+        set(h,'position',[2*scrsz(3)/3 scrsz(4)/3+20 scrsz(3)/3-30 scrsz(4)/3.2-90]);
+    else
+        set(h,'OuterPosition',[2*scrsz(3)/3 scrsz(4)/3+20 scrsz(3)/3 scrsz(4)/3.2]);
+    end
     world_bak=world_bak + fliplr(world_bak);
 end
 logimage_bak=20*log10(abs((world_bak)));
 h=figure(40);
-set(h,'OuterPosition',[scrsz(3)/3 40 scrsz(3)/3 scrsz(4)/3.2]);
+
+if isoctave
+    set(h,'position',[scrsz(3)/3 40 scrsz(3)/3-30 scrsz(4)/3.2-90]);
+else
+    set(h,'OuterPosition',[scrsz(3)/3 40 scrsz(3)/3 scrsz(4)/3.2]);
+end
 imagesc(room.y,room.z,logimage_bak,[0 140]);
 colormap(jet(256))
 colorbar
@@ -260,7 +297,12 @@ end
 close(h)
 
 h=figure(50);
-set(h,'OuterPosition',[1 40 scrsz(3)/3 scrsz(4)/3.2]);
+
+if isoctave
+    set(h,'position',[1 40 scrsz(3)/3-30 scrsz(4)/3.2-90]);
+else
+    set(h,'OuterPosition',[1 40 scrsz(3)/3 scrsz(4)/3.2]);
+end
 semilogx(fscan,ss_average)
 grid on
 title(['Averaged level in sweetspot. Diff is: ',num2str(ss_average(nbrf)-ss_average(1),'%2.1f'),' dB']) 
