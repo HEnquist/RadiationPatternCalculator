@@ -1,6 +1,6 @@
 
 
-function [ source ] = preparesource( source ,fignum)
+function [ sourceout ] = preparesource( sources ,fignum)
 %preparesource( source ): Calculates the parameters needed in the source structure
 %Copyright Henrik Enquist 2016
 %This file is part of Radiation Pattern Calculator.
@@ -25,56 +25,150 @@ else
   scrsz = get(groot,'ScreenSize');
 end
 
-source.nz=round(source.Lz/source.dx); %number of source points, z
-tempz=linspace(-source.Lz/2,source.Lz/2,source.nz);
-source.ny=round(source.Ly/source.dx); %number of source points, y
-tempy=linspace(-source.Ly/2,source.Ly/2,source.ny);
-[source.z, source.y] = meshgrid(tempz,tempy);
-source.y=source.y(:);
-source.z=source.z(:);
+
+sourceout = sources{1};
+c=340;
+sourceout.lambda=c/sourceout.f;
 
 
-source.r=sqrt(source.y.^2 + source.z.^2); %radius
-source.x=sqrt(source.radcurv^2-source.r.^2)-source.radcurv + (source.r-source.radius)*source.conedepth/source.radius; %calculate depth
-source.ints = ones(size(source.y)); %source point intensities
-mask=source.r<source.radius; %circular source
-
-source.r=source.r(mask);
-source.x=source.x(mask);
-source.y=source.y(mask);
-source.z=source.z(mask);
-source.ints=source.ints(mask);
-source.ints=1e5*source.ints/sum(source.ints);
-source.n=length(source.ints);
-
-%rotate and move the source
-if source.dipole
-    source.dir=[cosd(source.rotz)  sind(source.rotz)  0;
-        -sind(source.rotz)  cosd(source.rotz) 0;
-        0              0           1]*source.dir;
-    source.dir=source.dir/norm(source.dir); %normalize source direction vector
+stemp = sources{1};
+sourceout.x = [];
+sourceout.y = [];
+sourceout.z = [];
+%sourceout.r = [];
+sourceout.ints = [];
+sourceout.n= 0;
+sourceout.dipole = [];
+if ~isfield(sources{1},'stereo')
+   	sourceout.stereo=false;
 end
-xs_rot=cosd(source.rotz)*source.x + sind(source.rotz)*source.y;
-zs_rot=source.z;
-ys_rot=-sind(source.rotz)*source.x + cosd(source.rotz)*source.y;
 
-source.x=xs_rot+source.xpos;
-source.y=ys_rot+source.ypos;
-source.z=zs_rot+source.zpos;
+for m=1:length(sources)
+    % complete missing parameters
+    if ~(isfield(sources{m},'Ly')&& isfield(sources{m},'Lz'))
+        if isfield(sources{m},'radius')
+            sources{m}.Lz=2*sources{m}.radius;
+            sources{m}.Ly=2*sources{m}.radius;
+        else
+            error('Incomplete source!')
+        end
+    end
+    if ~isfield(sources{m},'radius')
+        if (isfield(sources{m},'Ly')&& isfield(sources{m},'Lz'))
+            sources{m}.radius=max([sources{m}.Ly sources{m}.Lz]);
+        else
+            error('Incomplete source!')
+        end
+    end
+    if ~isfield(sources{m},'radcurv')
+        sources{m}.radcurv=1000*sources{m}.radius;
+    end
+    if ~isfield(sources{m},'conedepth')
+        sources{m}.conedepth=0;
+    end
+    if ~isfield(sources{m},'dipole')
+        sources{m}.dipole=false;
+    elseif sources{m}.dipole && ~isfield(sources{m},'dir')
+        sources{m}.dir=[1;0;0];
+    end
+    if ~isfield(sources{m},'xpos')
+        sources{m}.xpos=0;
+    end
+    if ~isfield(sources{m},'ypos')
+        sources{m}.ypos=0;
+    end
+    if ~isfield(sources{m},'zpos')
+        sources{m}.zpos=0;
+    end
+    if ~isfield(sources{m},'roty')
+        sources{m}.roty=0;
+    end
+    if ~isfield(sources{m},'rotz')
+        sources{m}.rotz=0;
+    end
+    if ~isfield(sources{m},'level')
+        sources{m}.level=0;
+    end
+    if ~isfield(sources{m},'phase')
+        sources{m}.phase=0;
+    end
+    if ~isfield(sources{m},'wavespeed')
+        sources{m}.wavespeed=1e9;
+    end
+
+    
+    stemp.nz=round(sources{m}.Lz/sources{m}.dx); %number of source points, z
+    tempz=linspace(-sources{m}.Lz/2,sources{m}.Lz/2,stemp.nz);
+    stemp.ny=round(sources{m}.Ly/sources{m}.dx); %number of source points, y
+    tempy=linspace(-sources{m}.Ly/2,sources{m}.Ly/2,stemp.ny);
+    [stemp.z, stemp.y] = meshgrid(tempz,tempy);
+    stemp.y=stemp.y(:);
+    stemp.z=stemp.z(:);
+    
+    
+    stemp.r=sqrt(stemp.y.^2 + stemp.z.^2); %radius
+    stemp.x=sqrt(sources{m}.radcurv^2-stemp.r.^2)-sources{m}.radcurv + (stemp.r-sources{m}.radius)*sources{m}.conedepth/sources{m}.radius; %calculate depth
+    stemp.ints = ones(size(stemp.y)); %source point intensities
+    mask=stemp.r<sources{m}.radius; %circular source
+    
+    stemp.r=stemp.r(mask);
+    stemp.x=stemp.x(mask);
+    stemp.y=stemp.y(mask);
+    stemp.z=stemp.z(mask);
+    stemp.ints=stemp.ints(mask);
+    stemp.ints=1e5*stemp.ints/sum(stemp.ints) * 10^(sources{m}.level/20) .* exp(1i*sources{m}.phase*pi/180) .* exp(-1i*2*pi*stemp.f*stemp.r/sources{m}.wavespeed);
+    stemp.n=length(stemp.ints);
+    stemp.dipole = logical(sources{m}.dipole*ones(size(stemp.ints)));
+    
+    %rotate and move the source
+    if sources{m}.dipole
+        stemp.dir=[cosd(sources{m}.roty) 0 sind(sources{m}.roty);
+            0              1           0;
+            -sind(sources{m}.roty) 0 cosd(sources{m}.roty)]*sources{m}.dir;
+        
+        stemp.dir=[cosd(sources{m}.rotz)  sind(sources{m}.rotz)  0;
+            -sind(sources{m}.rotz)  cosd(sources{m}.rotz) 0;
+            0              0           1]*sources{m}.dir;
+        stemp.dir=stemp.dir/norm(stemp.dir); %normalize source direction vector
+    end
+    
+    xs_rot=cosd(sources{m}.roty)*stemp.x + sind(sources{m}.roty)*stemp.z;
+    ys_rot=stemp.y;
+    zs_rot=-sind(sources{m}.roty)*stemp.x + cosd(sources{m}.roty)*stemp.z;
+    
+    xs2_rot=cosd(sources{m}.rotz)*xs_rot + sind(sources{m}.rotz)*ys_rot;
+    zs2_rot=zs_rot;
+    ys2_rot=-sind(sources{m}.rotz)*xs_rot + cosd(sources{m}.rotz)*ys_rot;
+    
+    stemp.x=xs2_rot+sources{m}.xpos;
+    stemp.y=ys2_rot+sources{m}.ypos;
+    stemp.z=zs2_rot+sources{m}.zpos;
+    
+    sourceout.x = [sourceout.x; stemp.x];
+    sourceout.y = [sourceout.y; stemp.y];
+    sourceout.z = [sourceout.z; stemp.z];
+    %sourceout.r = [];
+    sourceout.ints = [sourceout.ints; stemp.ints];
+    sourceout.dipole = [sourceout.dipole; stemp.dipole];
+    sourceout.n= sourceout.n + stemp.n;
+    
+end
 
 
 %plot source points
-h=figure(fignum);
-
-if isoctave
-    set(h,'position',[1 2*scrsz(4)/3 scrsz(3)/3-30 scrsz(4)/3.2-90]);
-else
-    set(h,'OuterPosition',[1 2*scrsz(4)/3 scrsz(3)/3 scrsz(4)/3.2]);
+if fignum>0
+    h=figure(fignum);
+    
+    if isoctave
+        set(h,'position',[1 2*scrsz(4)/3 scrsz(3)/3-30 scrsz(4)/3.2-90]);
+    else
+        set(h,'OuterPosition',[1 2*scrsz(4)/3 scrsz(3)/3 scrsz(4)/3.2]);
+    end
+    plot3(sourceout.x,sourceout.y,sourceout.z,'.')
+    axis equal
+    xlabel('X, m')
+    ylabel('Y, m')
+    zlabel('Z, m')
 end
-plot3(source.x,source.y,source.z,'.')
-axis equal
-xlabel('X, m')
-ylabel('Y, m')
-zlabel('Z, m')
 end
 

@@ -1,4 +1,4 @@
-%Radiation Pattern Calculator v5
+%Radiation Pattern Calculator
 %Copyright Henrik Enquist 2016
 %This file is part of Radiation Pattern Calculator.
 % 
@@ -29,7 +29,7 @@ end
 room = struct;
 sweetspot = struct;
 
-room.dx = 20e-3; %pixelsize in meters
+room.dx = 10e-3; %pixelsize in meters
 room.lx = 5.1; %room length, m
 room.lz = 2.4; %room height, m
 room.ly = 3.2; %room width, m
@@ -43,92 +43,129 @@ sweetspot.zp = 0.0; %sweetspot vertical position
 
 
 %% define the source
-source = struct;
-
-source.f=5000; %frequency, Hz
-source.dx=10e-3; %source point spacing
 
 % --Definition of the source parameters--
-% source.Lz : source height, m
-% source.Ly : source width, m
-% source.radius : source radius, m, make large to disable
-% source.radcurv : source radius of curvature, m, make large to disable
-% source.conedepth : source cone depth, put to 0 to disable
-% source.dir : [x;y;z] vector for lobe direction before rotation by rotz, only used when dipole=true
-% source.dipole : false fot monopoles, true for dipoles
-% source.xpos : source distance from front wall
-% source.zpos : vertical position
-% source.ypos : sideways position
-% source.rotz : rotation around the vertical axis (toe-in), deg
-% source.stereo : true to mirror source sideways for stereo, needs Syp>0 to make sense
-%          only used for horizontal and back wall petterns
+% sources{} - array of sources
+
+% Mandatory
+% sources{}.f  : frequency, Hz
+% sources{}.dx : source point spacing, m
+% sources{}.Lz : source height, m, must be defined for rectangular sources
+% sources{}.Ly : source width, m, must be defined for rectangular sources
+% sources{}.radius : source radius, m, must be defined for round sources
+
+% Optional, if left out these are disabled or put to zero
+% sources{}.radcurv : source radius of curvature, m
+% sources{}.conedepth : source cone depth
+% sources{}.dir : [x;y;z] vector for lobe direction before rotation by rotz, only used when dipole=true
+% sources{}.dipole : false for monopoles, true for dipoles
+% sources{}.xpos : source distance from front wall
+% sources{}.zpos : vertical position
+% sources{}.ypos : sideways position
+% sources{}.roty : rotation around the y axis (tilt up/down), deg
+% sources{}.rotz : rotation around the vertical axis (toe-in), deg
+% sources{}.level : source level adjust, dB
+% sources{}.phase : source phase, only relevant when using more than one source
+% sources{}.wavespeed : propagation speed in the cone, outwards from voice coil, m/s
+% sources{}.stereo : true to mirror source sideways for stereo, needs ypos>0 to make sense
+%          only used for horizontal and back wall patterns
 
 %example: dipole line source 300x20mm
-source.Lz=1.32;
-source.Ly=0.025;
-source.radius=1000;
-source.radcurv=1000;
-source.conedepth=0;
-source.dir=[1;0;0];
-source.dipole = true;
-source.xpos = 1;
-source.ypos = 0;
-source.zpos = 0;
-source.rotz = 0;
-source.stereo=false;
+% sources{1}.f=5000;
+% sources{1}.dx=5e-3;
+% sources{1}.Lz=0.3;
+% sources{1}.Ly=0.02;
+% sources{1}.dir=[1;0;0];
+% sources{1}.dipole = true;
+% sources{1}.xpos = 1;
+% sources{1}.ypos = 0;
+% sources{1}.zpos = 0;
+% sources{1}.roty = 0;
+% sources{1}.rotz = 0;
+% sources{1}.level = 0;
+% sources{1}.phase = 0;
 
-%example: plane rectangular source 100x60mm with stereo enabled
-% source.Lz=100e-3;
-% source.Ly=60e-3;
-% source.radius=1000;
-% source.radcurv=1000;
-% source.conedepth=0;
-% source.dir=[1;0;0];
-% source.dipole = true;
-% source.xpos = 1;
-% source.ypos = 1.5;
-% source.zpos = 0;
-% source.rotz = 25;
-% source.stereo=true;
+
+%example: plane rectangular source 100x60mm with symmetric stereo enabled
+% sources{1}.f=5000; 
+% sources{1}.dx=10e-3;
+% sources{1}.Lz=100e-3;
+% sources{1}.Ly=60e-3;
+% sources{1}.dir=[1;0;0];
+% sources{1}.dipole = true;
+% sources{1}.xpos = 1;
+% sources{1}.ypos = 1.5;
+% sources{1}.roty = 0;
+% sources{1}.zpos = 0;
+% sources{1}.rotz = 25;
+% sources{1}.level = 0;
+% sources{1}.stereo=true;
 
 %example: dome, 26mm diameter, 30mm radius of curvature
-% source.Lz=26e-3;
-% source.Ly=26e-3;
-% source.radius=13e-3;
-% source.radcurv=30e-3;
-% source.conedepth=0;
-% source.dipole = false;
-% source.xpos = 0;
-% source.ypos = 0;
-% source.zpos = 0;
-% source.rotz = 0;
-% source.stereo=false;
+% sources{1}.f=15000;
+% sources{1}.dx=2e-3;
+% sources{1}.radius=13e-3;
+% sources{1}.radcurv=30e-3;
+% sources{1}.xpos = 0;
+% sources{1}.ypos = 0;
+% sources{1}.zpos = 0;
+% sources{1}.roty = 0;
+% sources{1}.rotz = 0;
+% sources{1}.level = 0;
 
-%example: cone, 200mm diameter, 60mm deep
-% source.Lz=200e-3;
-% source.Ly=200e-3;
-% source.radius=100e-3;
-% source.radcurv=100;
-% source.conedepth=60e-3;
-% source.dir=[1;0;0];
-% source.dipole = false;
-% source.xpos = 0;
-% source.zpos = 0;
-% source.ypos = 0;
-% source.rotz = 0;
-% source.stereo=false;
 
+%example: cone, 200mm diameter, 60mm deep, minimum info needed
+sources{1}.f=5000;
+sources{1}.dx=10e-3;
+sources{1}.radius=100e-3;
+sources{1}.conedepth=60e-3;
+%sources{1}.wavespeed = 500;
+
+
+
+%example: MTM, dome tweeter plus double woofers
+% sources{1}.f=2000;
+% sources{1}.dx=10e-3;
+% sources{1}.radius=80e-3;
+% sources{1}.conedepth=40e-3;
+% sources{1}.xpos = 0;
+% sources{1}.zpos = -150e-3;
+% sources{1}.ypos = 0;
+% sources{1}.roty = -5;
+% sources{1}.rotz = 0;
+% sources{1}.level = 0;
+% sources{1}.phase = 0;
+% 
+% sources{2}.dx=10e-3;
+% sources{2}.radius=80e-3;
+% sources{2}.conedepth=40e-3;
+% sources{2}.xpos = 0;
+% sources{2}.zpos = 150e-3;
+% sources{2}.ypos = 0;
+% sources{2}.roty = 5;
+% sources{2}.rotz = 0;
+% sources{2}.level = 0;
+% sources{2}.phase = 0;
+% 
+% sources{3}.dx=3e-3;
+% sources{3}.radius=12.5e-3;
+% sources{3}.radcurv=20e-3;
+% sources{3}.xpos = 0;
+% sources{3}.zpos = 0;
+% sources{3}.ypos = 0;
+% sources{3}.roty = 0;
+% sources{3}.rotz = 0;
+% sources{3}.level = 0;
+% sources{3}.phase = 0;
 
 %% calculate source points
-source=preparesource(source,10);
-fprintf('The source consists of %d points. The area is %4.2f cm^2.\n',source.n, source.n*source.dx^2*1e4)
+sourcestruct=preparesource(sources,10);
+fprintf('The source consists of %d points. The area is %4.2f cm^2.\n',sourcestruct.n, sourcestruct.n*sourcestruct.dx^2*1e4)
 
 
 %% create matrises och vectors
-c=340;
-source.lambda=c/source.f;
-sp_per_wl=source.lambda/source.dx;
-fprintf('Wavelenght is %4.2f mm. The source has %4.2f points per wavelength.\n',1000*source.lambda, sp_per_wl)
+sp_per_wl=sourcestruct.lambda/sourcestruct.dx;
+fprintf('Wavelenght is %4.2f mm. The source has %4.2f points per wavelength.\n',1000*sourcestruct.lambda, sp_per_wl)
 if sp_per_wl<5 %5 seems like a reasonable limit
     fprintf('Warning: the source has too few points!\n')
 end
@@ -143,7 +180,7 @@ room.x=linspace(0,room.nx*room.dx,room.nx);
 room.y=linspace(-room.ny/2*room.dx,room.ny/2*room.dx,room.ny);
 fprintf('Room is %d pixels high, %d pixels wide and %d pixels long.\n',room.nz,room.ny,room.nx)
 
-plotroom(source,room,sweetspot,11);
+plotroom(sourcestruct,room,sweetspot,11);
 
 % XZ plane (vertical) 
 plane_xz = struct;
@@ -175,7 +212,7 @@ plane_ss.xg=plane_ss.x0*ones(size(plane_ss.zg));
 %% calculate vertical pattern
 world_v = zeros(room.nz,room.nx);
 h = waitbar(0,'wait..');
-world_v=calculatepattern(plane_xz,source,world_v,h);
+world_v=calculatepattern(plane_xz,sourcestruct,world_v,h);
 close(h)
 
 logimage_v=20*log10(abs((world_v)));
@@ -187,10 +224,11 @@ else
 end
 
 imagesc(room.x,room.z,logimage_v,[0 140]);
+set(gca,'YDir','normal')
 colormap(jet(256))
 colorbar
 axis image
-title(['Vertical radiation pattern, ',num2str(source.Lz*100),' x ',num2str(source.Ly*100),' cm @',num2str(source.f), ' Hz'])
+title(['Vertical radiation pattern at ',num2str(sourcestruct.f), ' Hz'])
 xlabel('X, m')
 ylabel('Z, m')
 
@@ -199,10 +237,10 @@ ylabel('Z, m')
 %% calculate horizontal pattern
 world_h = zeros(room.ny,room.nx);
 h = waitbar(0,'wait..');
-world_h=calculatepattern(plane_xy,source,world_h,h);
+world_h=calculatepattern(plane_xy,sourcestruct,world_h,h);
 close(h)
 
-if source.stereo
+if sourcestruct.stereo
     image_lr=makestereoimage(world_h,'ud',1);
     h=figure(31);
     if isoctave
@@ -210,7 +248,8 @@ if source.stereo
     else
         imshow(image_lr,'InitialMagnification','fit')
     end
-    title(['Horizontal channel balance, ',num2str(source.f), ' Hz'])
+    set(gca,'YDir','normal')
+    title(['Horizontal channel balance, ',num2str(sourcestruct.f), ' Hz'])
     if isoctave
         set(h,'position',[2*scrsz(3)/3 2*scrsz(4)/3 scrsz(3)/3-30 scrsz(4)/3.2-90]);
     else
@@ -229,10 +268,11 @@ else
     set(h,'OuterPosition',[scrsz(3)/3 scrsz(4)/3+20 scrsz(3)/3 scrsz(4)/3.2]);
 end
 imagesc(room.x,room.y,logimage_h,[0 140]);
+set(gca,'YDir','normal')
 colormap(jet(256))
 colorbar
 axis image
-title(['Horizontal radiation pattern, ',num2str(source.Lz*100),' x ',num2str(source.Ly*100),' cm @',num2str(source.f), ' Hz'])
+title(['Horizontal radiation pattern at ',num2str(sourcestruct.f), ' Hz'])
 xlabel('X, m')
 ylabel('Y, m')
 
@@ -241,9 +281,9 @@ ylabel('Y, m')
 %% calculate pattern on back wall
 world_bak = zeros(room.nz,room.ny);
 h = waitbar(0,'wait..');
-world_bak=calculatepattern(plane_yz,source,world_bak,h);
+world_bak=calculatepattern(plane_yz,sourcestruct,world_bak,h);
 close(h)
-if source.stereo
+if sourcestruct.stereo
     image_blr = makestereoimage(world_bak,'lr',1);
     h=figure(41);
     if isoctave
@@ -251,7 +291,8 @@ if source.stereo
     else
         imshow(image_blr,'InitialMagnification','fit');
     end
-    title(['Back wall channel balance, ',num2str(source.f), ' Hz'])
+    set(gca,'YDir','normal')
+    title(['Back wall channel balance, ',num2str(sourcestruct.f), ' Hz'])
     
     if isoctave
         set(h,'position',[2*scrsz(3)/3 scrsz(4)/3+20 scrsz(3)/3-30 scrsz(4)/3.2-90]);
@@ -269,10 +310,11 @@ else
     set(h,'OuterPosition',[scrsz(3)/3 40 scrsz(3)/3 scrsz(4)/3.2]);
 end
 imagesc(room.y,room.z,logimage_bak,[0 140]);
+set(gca,'YDir','normal')
 colormap(jet(256))
 colorbar
 axis image
-title(['Radiation pattern on back wall, ',num2str(source.f), ' Hz'])
+title(['Radiation pattern on back wall, ',num2str(sourcestruct.f), ' Hz'])
 xlabel('Y, m')
 ylabel('Z, m')
 
@@ -281,17 +323,18 @@ ylabel('Z, m')
 h = waitbar(0,'wait..');
 
 nbrf=100;
-db20 = 1;
-db20k = 1;
+
 
 fscan=logspace(log10(20),log10(20000),nbrf);
 ss_average = zeros(size(fscan));
 
 for nf=1:nbrf
-    source.lambda=c./fscan(nf);
+    
+    sources{1}.f=fscan(nf);
+    sourcestruct=preparesource(sources,0);
     waitbar(nf/nbrf,h)
     world_ss = zeros(sweetspot.n,sweetspot.n);
-    world_ss=calculatepattern(plane_ss,source,world_ss,0);
+    world_ss=calculatepattern(plane_ss,sourcestruct,world_ss,0);
     ss_average(nf)=20*log10(mean(abs(world_ss(:))));
 end
 close(h)
