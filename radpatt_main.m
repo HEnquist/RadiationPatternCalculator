@@ -67,6 +67,8 @@ sweetspot.zp = 0.0; %sweetspot vertical position
 % sources{}.level : source level adjust, dB
 % sources{}.phase : source phase, only relevant when using more than one source
 % sources{}.wavespeed : propagation speed in the cone, outwards from voice coil, m/s
+% sources{}.xo : transfer function of a crossover filter,
+%                example 1st order lowpass at 100 Hz: @(s) (2*pi*100)./(s + 2*pi*100)
 % sources{}.stereo : true to mirror source sideways for stereo, needs ypos>0 to make sense
 %          only used for horizontal and back wall patterns
 
@@ -115,15 +117,15 @@ sweetspot.zp = 0.0; %sweetspot vertical position
 
 
 %example: cone, 200mm diameter, 60mm deep, minimum info needed
-sources{1}.f=5000;
-sources{1}.dx=10e-3;
-sources{1}.radius=100e-3;
-sources{1}.conedepth=60e-3;
+% sources{1}.f=5000;
+% sources{1}.dx=10e-3;
+% sources{1}.radius=100e-3;
+% sources{1}.conedepth=60e-3;
 %sources{1}.wavespeed = 500;
 
 
 
-%example: MTM, dome tweeter plus double woofers
+%example: standard 2way with crossover
 % sources{1}.f=2000;
 % sources{1}.dx=10e-3;
 % sources{1}.radius=80e-3;
@@ -131,32 +133,36 @@ sources{1}.conedepth=60e-3;
 % sources{1}.xpos = 0;
 % sources{1}.zpos = -150e-3;
 % sources{1}.ypos = 0;
-% sources{1}.roty = -5;
+% sources{1}.roty = 0;
 % sources{1}.rotz = 0;
 % sources{1}.level = 0;
 % sources{1}.phase = 0;
+% w0 = 2*pi*2000;
+% Q = 0.5;
+% sources{1}.xo = @(s) w0^2./(s.^2 + w0/Q*s + w0^2);  
 % 
-% sources{2}.dx=10e-3;
-% sources{2}.radius=80e-3;
-% sources{2}.conedepth=40e-3;
-% sources{2}.xpos = 0;
-% sources{2}.zpos = 150e-3;
+% sources{2}.dx=3e-3;
+% sources{2}.radius=12.5e-3;
+% sources{2}.radcurv=20e-3;
+% sources{2}.xpos = -20e-3;
+% sources{2}.zpos = 0;
 % sources{2}.ypos = 0;
-% sources{2}.roty = 5;
+% sources{2}.roty = 0;
 % sources{2}.rotz = 0;
-% sources{2}.level = 0;
+% sources{2}.level = 0.5;
 % sources{2}.phase = 0;
-% 
-% sources{3}.dx=3e-3;
-% sources{3}.radius=12.5e-3;
-% sources{3}.radcurv=20e-3;
-% sources{3}.xpos = 0;
-% sources{3}.zpos = 0;
-% sources{3}.ypos = 0;
-% sources{3}.roty = 0;
-% sources{3}.rotz = 0;
-% sources{3}.level = 0;
-% sources{3}.phase = 0;
+% sources{2}.xo = @(s) -s.^2./(s.^2 + w0/Q*s + w0^2); 
+
+%example: line array with 5 drivers,
+sources{1}.f=5000;
+sources{1}.dx=5e-3;
+sources{1}.radius=40e-3;
+sources{1}.conedepth=10e-3;
+sources{1}.zpos = -200e-3;
+for mm = 2:5
+    sources{mm} = sources{mm-1};
+    sources{mm}.zpos = sources{mm-1}.zpos + 100e-3;
+end
 
 %% calculate source points
 sourcestruct=preparesource(sources,10);

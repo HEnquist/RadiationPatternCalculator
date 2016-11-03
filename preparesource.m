@@ -95,7 +95,9 @@ for m=1:length(sources)
     if ~isfield(sources{m},'wavespeed')
         sources{m}.wavespeed=1e9;
     end
-
+    if ~isfield(sources{m},'xo')
+        sources{m}.xo=@(s) 1;
+    end
     
     stemp.nz=round(sources{m}.Lz/sources{m}.dx); %number of source points, z
     tempz=linspace(-sources{m}.Lz/2,sources{m}.Lz/2,stemp.nz);
@@ -116,7 +118,12 @@ for m=1:length(sources)
     stemp.y=stemp.y(mask);
     stemp.z=stemp.z(mask);
     stemp.ints=stemp.ints(mask);
-    stemp.ints=1e5*stemp.ints/sum(stemp.ints) * 10^(sources{m}.level/20) .* exp(1i*sources{m}.phase*pi/180) .* exp(-1i*2*pi*stemp.f*stemp.r/sources{m}.wavespeed);
+    Anorm = 1e5*stemp.ints/sum(stemp.ints);
+    Alevel = 10^(sources{m}.level/20);
+    Aphase = exp(1i*sources{m}.phase*pi/180);
+    Awave = exp(-1i*2*pi*stemp.f*stemp.r/sources{m}.wavespeed);
+    Axo = sources{m}.xo(1i*2*pi*stemp.f);
+    stemp.ints = Anorm .* Aphase .* Alevel .* Awave .* Axo ;
     stemp.n=length(stemp.ints);
     stemp.dipole = logical(sources{m}.dipole*ones(size(stemp.ints)));
     
