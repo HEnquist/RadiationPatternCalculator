@@ -1,5 +1,5 @@
 %Radiation Pattern Calculator
-%Copyright Henrik Enquist 2016
+%Copyright Henrik Enquist 2017
 %This file is part of Radiation Pattern Calculator.
 % 
 %Radiation Pattern Calculator is free software: you can redistribute it and/or modify
@@ -121,7 +121,7 @@ sweetspot.zp = 0.0; %sweetspot vertical position
 % sources{1}.dx=10e-3;
 % sources{1}.radius=100e-3;
 % sources{1}.conedepth=60e-3;
-%sources{1}.wavespeed = 500;
+% sources{1}.wavespeed = 500;
 
 
 
@@ -153,16 +153,47 @@ sweetspot.zp = 0.0; %sweetspot vertical position
 % sources{2}.phase = 0;
 % sources{2}.xo = @(s) -s.^2./(s.^2 + w0/Q*s + w0^2); 
 
+%example: Heil AMT  + 8-inch woofer, ideal brickwall filter
+sources{1}.f=15000;
+sources{1}.dx=10e-3;
+sources{1}.radius=85e-3;
+sources{1}.conedepth=40e-3;
+sources{1}.xpos = 0;
+sources{1}.zpos = -150e-3;
+sources{1}.ypos = 0;
+sources{1}.roty = 0;
+sources{1}.rotz = 0;
+sources{1}.level = 0;
+sources{1}.phase = 0;
+w0 = 2*pi*2000;
+%sources{1}.xo = @(s) w0^2./(s.^2 + w0/Q*s + w0^2);  
+sources{1}.xo = @(s) imag(s)<w0; 
+
+sources{2}.dx=3e-3;
+sources{2}.Lz=130e-3;
+sources{2}.Ly=30e-3;
+sources{2}.dir=[1;0;0];
+%sources{2}.dipole = true;
+sources{2}.xpos = -20e-3;
+sources{2}.zpos = 100e-3;
+sources{2}.ypos = 0;
+sources{2}.roty = 0;
+sources{2}.rotz = 0;
+sources{2}.level = -0.5;
+sources{2}.phase = 0;
+%sources{2}.xo = @(s) -s.^2./(s.^2 + w0/Q*s + w0^2); 
+sources{2}.xo = @(s) imag(s)>w0; 
+
 %example: line array with 5 drivers,
-sources{1}.f=5000;
-sources{1}.dx=5e-3;
-sources{1}.radius=40e-3;
-sources{1}.conedepth=10e-3;
-sources{1}.zpos = -200e-3;
-for mm = 2:5
-    sources{mm} = sources{mm-1};
-    sources{mm}.zpos = sources{mm-1}.zpos + 100e-3;
-end
+% sources{1}.f=5000;
+% sources{1}.dx=5e-3;
+% sources{1}.radius=40e-3;
+% sources{1}.conedepth=10e-3;
+% sources{1}.zpos = -200e-3;
+% for mm = 2:5
+%     sources{mm} = sources{mm-1};
+%     sources{mm}.zpos = sources{mm-1}.zpos + 100e-3;
+% end
 
 %% calculate source points
 sourcestruct=preparesource(sources,10);
@@ -213,6 +244,20 @@ sweetspot.z = linspace(-sweetspot.l/2,sweetspot.l/2,sweetspot.n)+sweetspot.zp;
 sweetspot.y = linspace(-sweetspot.l/2,sweetspot.l/2,sweetspot.n)+sweetspot.yp;
 [plane_ss.zg, plane_ss.yg]=meshgrid(sweetspot.z,sweetspot.y); 
 plane_ss.xg=plane_ss.x0*ones(size(plane_ss.zg));
+
+% directivity pattern
+L_arc = 5; %m, distance to arcs
+np_arc = 100; %number of points
+nf_arc = 200; %number of frequencies
+arc_angles = linspace(-pi/2,pi/2,np_arc);
+arc_hor.xg = L_arc*cos(arc_angles);
+arc_hor.yg = L_arc*sin(arc_angles);
+arc_hor.zg = zeros(size(arc_hor.xg));
+arc_vert.zg = L_arc*sin(arc_angles);
+arc_vert.xg = L_arc*cos(arc_angles);
+arc_vert.yg = zeros(size(arc_hor.xg));
+
+
 
 
 %% calculate vertical pattern
@@ -353,7 +398,81 @@ else
     set(h,'OuterPosition',[1 40 scrsz(3)/3 scrsz(4)/3.2]);
 end
 semilogx(fscan,ss_average)
+[ticks,labels]=loglabels(fscan(1),fscan(end));
+set(gca,'XTick',ticks);
+set(gca,'XTickLabel',labels);
 grid on
 title(['Averaged level in sweetspot. Diff is: ',num2str(ss_average(nbrf)-ss_average(1),'%2.1f'),' dB']) 
 xlabel('Frequency, Hz')
 ylabel('SPL, dB')
+
+
+%% calculate directivity patterns (disabled when stereo is enabled)
+if sourcestruct.stereo~=true;
+    h = waitbar(0,'wait..');
+    
+    fscan=logspace(log10(100),log10(20000),nf_arc);
+    world_dir_hor = zeros(np_arc,nf_arc);
+    world_dir_vert = zeros(np_arc,nf_arc);
+    world_temp = zeros(1,np_arc);
+    for nf=1:nf_arc
+        
+        sources{1}.f=fscan(nf);
+        sourcestruct=preparesource(sources,0);
+        waitbar(nf/nf_arc,h)
+        world_temp = zeros(1,np_arc);
+        world_temp=calculatepattern(arc_hor,sourcestruct,world_temp,0);
+        world_dir_hor(:,nf)=world_temp;
+        world_temp = zeros(1,np_arc);
+        world_temp=calculatepattern(arc_vert,sourcestruct,world_temp,0);
+        world_dir_vert(:,nf)=world_temp;
+    end
+    close(h)
+    
+    h=figure(60);
+    
+    logimage_dir_hor=20*log10(abs((world_dir_hor)));
+    
+    
+    if isoctave
+        set(h,'position',[2*scrsz(3)/3 scrsz(4)/3+20 scrsz(3)/3-30 scrsz(4)/3.2-90]);
+    else
+        set(h,'OuterPosition',[2*scrsz(3)/3 scrsz(4)/3+20 scrsz(3)/3 scrsz(4)/3.2]);
+    end
+    %imagesc( [fscan(10), fscan(end)],arc_angles*180/pi,logimage_dir_hor,[0 140]);
+    %imagesc(logimage_dir_hor,[max(logimage_dir_hor(:))-30 max(logimage_dir_hor(:))]);
+    imagesc([0,1],arc_angles*180/pi,logimage_dir_hor,[max(logimage_dir_hor(:))-20 max(logimage_dir_hor(:))]);
+    set(gca,'YDir','normal')
+    %set(gca, 'XScale','log')
+    [ticks,labels]=loglabels(fscan(1),fscan(end));
+    ticks = (log10(ticks)-(log10(fscan(1))))/(log10(fscan(end))-log10(fscan(1)));
+    set(gca, 'XTick',ticks)
+    set(gca, 'XTickLabel',labels);
+    colormap(jet(256))
+    colorbar
+    %axis image
+    title(['Horizontal directivity'])
+    xlabel('f, Hz')
+    ylabel('angle, deg')
+    
+    logimage_dir_vert=20*log10(abs((world_dir_vert)));
+    h=figure(61);
+    if isoctave
+        set(h,'position',[2*scrsz(3)/3 40 scrsz(3)/3-30 scrsz(4)/3.2-90]);
+    else
+        set(h,'OuterPosition',[2*scrsz(3)/3 40 scrsz(3)/3 scrsz(4)/3.2]);
+    end
+    
+    imagesc(([0,1]),arc_angles*180/pi,logimage_dir_vert,[max(logimage_dir_vert(:))-20 max(logimage_dir_vert(:))]);
+    set(gca,'YDir','normal')
+    [ticks,labels]=loglabels(fscan(1),fscan(end));
+    ticks = (log10(ticks)-(log10(fscan(1))))/(log10(fscan(end))-log10(fscan(1)));
+    set(gca, 'XTick',ticks)
+    set(gca, 'XTickLabel',labels);
+    colormap(jet(256))
+    colorbar
+    %axis image
+    title(['Vertical directivity'])
+    xlabel('f, Hz')
+    ylabel('angle, deg')
+end
