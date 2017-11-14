@@ -73,19 +73,19 @@ sweetspot.zp = 0.0; %sweetspot vertical position
 %          only used for horizontal and back wall patterns
 
 %example: dipole line source 300x20mm
-% sources{1}.f=5000;
-% sources{1}.dx=5e-3;
-% sources{1}.Lz=0.3;
-% sources{1}.Ly=0.02;
-% sources{1}.dir=[1;0;0];
-% sources{1}.dipole = true;
-% sources{1}.xpos = 1;
-% sources{1}.ypos = 0;
-% sources{1}.zpos = 0;
-% sources{1}.roty = 0;
-% sources{1}.rotz = 0;
-% sources{1}.level = 0;
-% sources{1}.phase = 0;
+sources{1}.f=5000;
+sources{1}.dx=5e-3;
+sources{1}.Lz=0.3;
+sources{1}.Ly=0.02;
+sources{1}.dir=[1;0;0];
+sources{1}.dipole = true;
+sources{1}.xpos = 1;
+sources{1}.ypos = 0;
+sources{1}.zpos = 0;
+sources{1}.roty = 0;
+sources{1}.rotz = 0;
+sources{1}.level = 0;
+sources{1}.phase = 0;
 
 
 %example: plane rectangular source 100x60mm with symmetric stereo enabled
@@ -154,35 +154,35 @@ sweetspot.zp = 0.0; %sweetspot vertical position
 % sources{2}.xo = @(s) -s.^2./(s.^2 + w0/Q*s + w0^2); 
 
 %example: Heil AMT  + 8-inch woofer, ideal brickwall filter
-sources{1}.f=15000;
-sources{1}.dx=10e-3;
-sources{1}.radius=85e-3;
-sources{1}.conedepth=40e-3;
-sources{1}.xpos = 0;
-sources{1}.zpos = -150e-3;
-sources{1}.ypos = 0;
-sources{1}.roty = 0;
-sources{1}.rotz = 0;
-sources{1}.level = 0;
-sources{1}.phase = 0;
-w0 = 2*pi*2000;
-%sources{1}.xo = @(s) w0^2./(s.^2 + w0/Q*s + w0^2);  
-sources{1}.xo = @(s) imag(s)<w0; 
-
-sources{2}.dx=3e-3;
-sources{2}.Lz=130e-3;
-sources{2}.Ly=30e-3;
-sources{2}.dir=[1;0;0];
-%sources{2}.dipole = true;
-sources{2}.xpos = -20e-3;
-sources{2}.zpos = 100e-3;
-sources{2}.ypos = 0;
-sources{2}.roty = 0;
-sources{2}.rotz = 0;
-sources{2}.level = -0.5;
-sources{2}.phase = 0;
-%sources{2}.xo = @(s) -s.^2./(s.^2 + w0/Q*s + w0^2); 
-sources{2}.xo = @(s) imag(s)>w0; 
+% sources{1}.f=15000;
+% sources{1}.dx=10e-3;
+% sources{1}.radius=85e-3;
+% sources{1}.conedepth=40e-3;
+% sources{1}.xpos = 0;
+% sources{1}.zpos = -150e-3;
+% sources{1}.ypos = 0;
+% sources{1}.roty = 0;
+% sources{1}.rotz = 0;
+% sources{1}.level = 0;
+% sources{1}.phase = 0;
+% w0 = 2*pi*2000;
+% %sources{1}.xo = @(s) w0^2./(s.^2 + w0/Q*s + w0^2);  
+% sources{1}.xo = @(s) imag(s)<w0; 
+% 
+% sources{2}.dx=3e-3;
+% sources{2}.Lz=130e-3;
+% sources{2}.Ly=30e-3;
+% sources{2}.dir=[1;0;0];
+% %sources{2}.dipole = true;
+% sources{2}.xpos = -20e-3;
+% sources{2}.zpos = 100e-3;
+% sources{2}.ypos = 0;
+% sources{2}.roty = 0;
+% sources{2}.rotz = 0;
+% sources{2}.level = -0.5;
+% sources{2}.phase = 0;
+% %sources{2}.xo = @(s) -s.^2./(s.^2 + w0/Q*s + w0^2); 
+% sources{2}.xo = @(s) imag(s)>w0; 
 
 %example: line array with 5 drivers,
 % sources{1}.f=5000;
@@ -398,9 +398,11 @@ else
     set(h,'OuterPosition',[1 40 scrsz(3)/3 scrsz(4)/3.2]);
 end
 semilogx(fscan,ss_average)
-[ticks,labels]=loglabels(fscan(1),fscan(end));
-set(gca,'XTick',ticks);
-set(gca,'XTickLabel',labels);
+if ~isoctave
+    [ticks,labels]=loglabels(fscan(1),fscan(end));
+    set(gca,'XTick',ticks);
+    set(gca,'XTickLabel',labels);
+end
 grid on
 title(['Averaged level in sweetspot. Diff is: ',num2str(ss_average(nbrf)-ss_average(1),'%2.1f'),' dB']) 
 xlabel('Frequency, Hz')
@@ -441,13 +443,19 @@ if sourcestruct.stereo~=true;
     end
     %imagesc( [fscan(10), fscan(end)],arc_angles*180/pi,logimage_dir_hor,[0 140]);
     %imagesc(logimage_dir_hor,[max(logimage_dir_hor(:))-30 max(logimage_dir_hor(:))]);
-    imagesc([0,1],arc_angles*180/pi,logimage_dir_hor,[max(logimage_dir_hor(:))-20 max(logimage_dir_hor(:))]);
-    set(gca,'YDir','normal')
-    %set(gca, 'XScale','log')
-    [ticks,labels]=loglabels(fscan(1),fscan(end));
-    ticks = (log10(ticks)-(log10(fscan(1))))/(log10(fscan(end))-log10(fscan(1)));
-    set(gca, 'XTick',ticks)
-    set(gca, 'XTickLabel',labels);
+    if isoctave
+        imagesc(([log10(fscan(1)),log10(fscan(end))]),arc_angles*180/pi,logimage_dir_hor,[max(logimage_dir_hor(:))-20 max(logimage_dir_hor(:))]);
+        set(gca,'YDir','normal')
+        ticks = get(gca,'XTick');
+        set(gca, 'XTickLabel',10.^ticks);
+    else    
+        imagesc([0,1],arc_angles*180/pi,logimage_dir_hor,[max(logimage_dir_hor(:))-20 max(logimage_dir_hor(:))]);
+        set(gca,'YDir','normal')
+        [ticks,labels]=loglabels(fscan(1),fscan(end));
+        ticks = (log10(ticks)-(log10(fscan(1))))/(log10(fscan(end))-log10(fscan(1)));
+        set(gca, 'XTick',ticks)
+        set(gca, 'XTickLabel',labels);
+    end
     colormap(jet(256))
     colorbar
     %axis image
@@ -463,12 +471,20 @@ if sourcestruct.stereo~=true;
         set(h,'OuterPosition',[2*scrsz(3)/3 40 scrsz(3)/3 scrsz(4)/3.2]);
     end
     
-    imagesc(([0,1]),arc_angles*180/pi,logimage_dir_vert,[max(logimage_dir_vert(:))-20 max(logimage_dir_vert(:))]);
-    set(gca,'YDir','normal')
-    [ticks,labels]=loglabels(fscan(1),fscan(end));
-    ticks = (log10(ticks)-(log10(fscan(1))))/(log10(fscan(end))-log10(fscan(1)));
-    set(gca, 'XTick',ticks)
-    set(gca, 'XTickLabel',labels);
+
+    if isoctave
+        imagesc(([log10(fscan(1)),log10(fscan(end))]),arc_angles*180/pi,logimage_dir_vert,[max(logimage_dir_vert(:))-20 max(logimage_dir_vert(:))]);
+        set(gca,'YDir','normal')
+        ticks = get(gca,'XTick');
+        set(gca, 'XTickLabel',10.^ticks);
+    else
+        imagesc(([0,1]),arc_angles*180/pi,logimage_dir_vert,[max(logimage_dir_vert(:))-20 max(logimage_dir_vert(:))]);
+        set(gca,'YDir','normal')
+        [ticks,labels]=loglabels(fscan(1),fscan(end));
+        ticks = (log10(ticks)-(log10(fscan(1))))/(log10(fscan(end))-log10(fscan(1)));
+        set(gca, 'XTick',ticks)
+        set(gca, 'XTickLabel',labels);
+    end
     colormap(jet(256))
     colorbar
     %axis image
