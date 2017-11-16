@@ -246,17 +246,17 @@ sweetspot.y = linspace(-sweetspot.l/2,sweetspot.l/2,sweetspot.n)+sweetspot.yp;
 plane_ss.xg=plane_ss.x0*ones(size(plane_ss.zg));
 
 % directivity pattern
-L_arc = 5; %m, distance to arcs
+%L_arc = 5; %m, distance to arcs
+L_arc = sweetspot.xp - sources{1}.xpos; %%m, distance to arcs, default is distance between first source and sweetspot
 np_arc = 100; %number of points
 nf_arc = 200; %number of frequencies
 arc_angles = linspace(-pi/2,pi/2,np_arc);
-arc_hor.xg = L_arc*cos(arc_angles);
-arc_hor.yg = L_arc*sin(arc_angles);
-arc_hor.zg = zeros(size(arc_hor.xg));
-arc_vert.zg = L_arc*sin(arc_angles);
-arc_vert.xg = L_arc*cos(arc_angles);
-arc_vert.yg = zeros(size(arc_hor.xg));
-
+arc_hor.xg = L_arc*cos(arc_angles)+sources{1}.xpos;
+arc_hor.yg = L_arc*sin(arc_angles)+sources{1}.ypos;
+arc_hor.zg = zeros(size(arc_hor.xg))+sources{1}.zpos;
+arc_vert.zg = L_arc*sin(arc_angles)+sources{1}.zpos;
+arc_vert.xg = L_arc*cos(arc_angles)+sources{1}.xpos;
+arc_vert.yg = zeros(size(arc_hor.xg))+sources{1}.ypos;
 
 
 
