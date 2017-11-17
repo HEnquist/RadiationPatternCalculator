@@ -73,7 +73,7 @@ sweetspot.zp = 0.0; %sweetspot vertical position
 %          only used for horizontal and back wall patterns
 
 %example: dipole line source 300x20mm
-sources{1}.f=5000;
+sources{1}.f=15000;
 sources{1}.dx=5e-3;
 sources{1}.Lz=0.3;
 sources{1}.Ly=0.02;
@@ -121,7 +121,7 @@ sources{1}.phase = 0;
 % sources{1}.dx=10e-3;
 % sources{1}.radius=100e-3;
 % sources{1}.conedepth=60e-3;
-% sources{1}.wavespeed = 500;
+% sources{1}.wavespeed = 600;
 
 
 
@@ -139,7 +139,8 @@ sources{1}.phase = 0;
 % sources{1}.phase = 0;
 % w0 = 2*pi*2000;
 % Q = 0.5;
-% sources{1}.xo = @(s) w0^2./(s.^2 + w0/Q*s + w0^2);  
+% %sources{1}.xo = @(s) w0^2./(s.^2 + w0/Q*s + w0^2); %2nd order
+% sources{1}.xo = @(s) w0./(s + w0); %1st order
 % 
 % sources{2}.dx=3e-3;
 % sources{2}.radius=12.5e-3;
@@ -151,7 +152,8 @@ sources{1}.phase = 0;
 % sources{2}.rotz = 0;
 % sources{2}.level = 0.5;
 % sources{2}.phase = 0;
-% sources{2}.xo = @(s) -s.^2./(s.^2 + w0/Q*s + w0^2); 
+% %sources{2}.xo = @(s) -s.^2./(s.^2 + w0/Q*s + w0^2); %2nd order
+% sources{2}.xo = @(s) s./(s + w0); %1st order
 
 %example: Heil AMT  + 8-inch woofer, ideal brickwall filter
 % sources{1}.f=15000;
@@ -247,16 +249,16 @@ plane_ss.xg=plane_ss.x0*ones(size(plane_ss.zg));
 
 % directivity pattern
 %L_arc = 5; %m, distance to arcs
-L_arc = sweetspot.xp - sources{1}.xpos; %%m, distance to arcs, default is distance between first source and sweetspot
+L_arc = sweetspot.xp - mean(sourcestruct.x); %%m, distance to arcs, default is distance between first source and sweetspot
 np_arc = 100; %number of points
 nf_arc = 200; %number of frequencies
 arc_angles = linspace(-pi/2,pi/2,np_arc);
-arc_hor.xg = L_arc*cos(arc_angles)+sources{1}.xpos;
-arc_hor.yg = L_arc*sin(arc_angles)+sources{1}.ypos;
-arc_hor.zg = zeros(size(arc_hor.xg))+sources{1}.zpos;
-arc_vert.zg = L_arc*sin(arc_angles)+sources{1}.zpos;
-arc_vert.xg = L_arc*cos(arc_angles)+sources{1}.xpos;
-arc_vert.yg = zeros(size(arc_hor.xg))+sources{1}.ypos;
+arc_hor.xg = L_arc*cos(arc_angles)+mean(sourcestruct.x);
+arc_hor.yg = L_arc*sin(arc_angles)+mean(sourcestruct.y);
+arc_hor.zg = zeros(size(arc_hor.xg))+mean(sourcestruct.z);
+arc_vert.zg = L_arc*sin(arc_angles)+mean(sourcestruct.z);
+arc_vert.xg = L_arc*cos(arc_angles)+mean(sourcestruct.x);
+arc_vert.yg = zeros(size(arc_hor.xg))+mean(sourcestruct.y);
 
 
 
