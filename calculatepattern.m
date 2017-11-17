@@ -26,9 +26,9 @@ for nn=1:source.n
     r=sqrt(r_x.^2+r_y.^2+r_z.^2);
     if source.dipole(nn)
         alpha = acos((r_x.*source.dir(1) + r_y.*source.dir(2) + r_z.*source.dir(3))./r) ;
-        world=world+source.ints(nn).*1i.*cos(alpha).*exp(1i*2*pi*r/source.lambda)./r;
+        world=world+source.ints(nn).*1i.*cos(alpha).*exp(-1i*2*pi*r/source.lambda)./r;
     else
-        world=world+source.ints(nn).*exp(1i*2*pi*r/source.lambda)./r;
+        world=world+source.ints(nn).*exp(-1i*2*pi*r/source.lambda)./r;
     end
 end
 end
