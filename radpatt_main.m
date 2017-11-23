@@ -26,12 +26,14 @@ else
 end
 
 %% define the room and source
-%run('examples\talldipole.m');
+run('examples\talldipole.m');
 %run('examples\dome.m');
 %run('examples\cone.m');
-%run('examples\array.m');
+%run('examples\array_simple.m');
+%run('examples\array_curved.m');
+%run('examples\cbt.m');
 %run('examples\stereo.m');
-run('examples\twoway.m');
+%run('examples\twoway.m');
 
 %% calculate source points
 sourcestruct=preparesource(sources,10);
@@ -248,6 +250,7 @@ ylabel('SPL, dB')
 
 
 %% calculate directivity patterns (disabled when stereo is enabled)
+normalize_dp = true;
 if sourcestruct.stereo~=true;
     h = waitbar(0,'wait..');
     
@@ -262,9 +265,15 @@ if sourcestruct.stereo~=true;
         waitbar(nf/nf_arc,h)
         world_temp = zeros(1,np_arc);
         world_temp=calculatepattern(arc_hor,sourcestruct,world_temp,0);
+        if normalize_dp 
+            world_temp = world_temp/abs(world_temp(end/2));
+        end
         world_dir_hor(:,nf)=world_temp;
         world_temp = zeros(1,np_arc);
         world_temp=calculatepattern(arc_vert,sourcestruct,world_temp,0);
+        if normalize_dp 
+            world_temp = world_temp/abs(world_temp(end/2));
+        end
         world_dir_vert(:,nf)=world_temp;
     end
     close(h)
